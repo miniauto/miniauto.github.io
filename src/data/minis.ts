@@ -2,6 +2,23 @@ import type { MiniApp } from '../types'
 
 export const STARTERS: MiniApp[] = [
   {
+    id: 'click-tooling',
+    name: 'Click Tooling',
+    initials: 'CL',
+    description: 'Track plumbing work across every project and crew you run.',
+    category: 'Trade',
+    repo: 'clickconstruction/pipetooling.github.io',
+    repoUrl: 'https://github.com/clickconstruction/pipetooling.github.io',
+    openUrl: 'https://clicktooling.com/',
+    lines: 948083,
+    sizeKb: 97556,
+    updatedAt: '2026-09-12',
+    updatesPerWeek: 233.3,
+    shots: [],
+    versions: [{ hash: '8dc6c42', shipped: '2026-09-12', note: 'pipeline crew names' }],
+    reviewsByHash: { '8dc6c42': [] },
+  },
+  {
     id: 'click-plumbing',
     name: 'Click Plumbing',
     initials: 'CP',
