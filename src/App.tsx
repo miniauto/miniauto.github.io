@@ -110,7 +110,7 @@ export default function App() {
       <div className="board">
         <div className="board-head">
           <span className="col-name">Mini</span>
-          <span className="col-score">{ranking ? 'Rating' : 'Last commit'}</span>
+          <span className="col-score">{ranking ? 'Rating' : 'Lines · size'}</span>
         </div>
         {ranked.map((app, index) => (
           <BoardRow
@@ -195,8 +195,10 @@ function BoardRow({
         <span className="col-score">
           {live.length === 0 ? (
             <span className="stacked-score">
-              <span className="quiet-value">{formatDate(app.updatedAt)}</span>
-              <span className="lineage-score">{freshnessLabel(app.updatedAt)}</span>
+              <span className="quiet-value">
+                {app.lines ? `~${formatCount(app.lines)}` : '—'}
+              </span>
+              <span className="lineage-score">{formatSize(app.sizeKb)}</span>
             </span>
           ) : (
             <span className="stacked-score">
