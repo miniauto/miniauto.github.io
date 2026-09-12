@@ -598,44 +598,94 @@ tr.viewing td {
 
 /* ---------- shots ---------- */
 
+/* ---------- why / who / features ---------- */
+
+.prose {
+  margin: 0;
+  max-width: 58ch;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--ink-2);
+}
+
+.best-for {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.best-for li {
+  position: relative;
+  padding-left: 16px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+
+.best-for li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 8px;
+  width: 5px;
+  height: 5px;
+  border-radius: 99px;
+  background: var(--line-2);
+}
+
+.features {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.features dt {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.006em;
+}
+
+.features dd {
+  margin: 3px 0 0;
+  max-width: 58ch;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--ink-2);
+}
+
+/* ---------- screenshots ---------- */
+
 .shots {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
 }
 
 .shot {
+  margin: 0;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--surface);
   overflow: hidden;
 }
 
-.shot-label {
-  padding: 7px 10px;
-  border-bottom: 1px solid var(--line);
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--ink-3);
-}
-
-.shot-body {
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-  padding: 14px 10px;
-}
-
-.bar {
-  height: 7px;
-  border-radius: 99px;
+.shot img {
+  display: block;
+  width: 100%;
+  height: auto;
   background: var(--fill);
 }
 
-.bar.strong {
-  background: #dcc4b9;
+.shot figcaption {
+  padding: 8px 10px;
+  border-top: 1px solid var(--line);
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--ink-3);
 }
 
 /* ---------- footnote ---------- */

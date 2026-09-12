@@ -17,7 +17,7 @@ import {
   starTotal,
   versionNumber,
 } from './lib/minis'
-import type { AppVersion, MiniApp, Review, Shot } from './types'
+import type { AppVersion, MiniApp, Review } from './types'
 
 export default function App() {
   const [apps, setApps] = useState<MiniApp[]>(STARTERS)
@@ -295,12 +295,47 @@ function RowDropdown({
         last 3 weeks · lines estimated from language bytes
       </p>
 
-      {app.shots.length > 0 ? (
+      {app.why ? (
         <section className="drop-section">
-          <h2>From the app</h2>
+          <h2>Why it is useful</h2>
+          <p className="prose">{app.why}</p>
+        </section>
+      ) : null}
+
+      {app.bestFor.length > 0 ? (
+        <section className="drop-section">
+          <h2>Who gets the most out of it</h2>
+          <ul className="best-for">
+            {app.bestFor.map((who) => (
+              <li key={who}>{who}</li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
+      {app.features.length > 0 ? (
+        <section className="drop-section">
+          <h2>Worth calling out</h2>
+          <dl className="features">
+            {app.features.map((feature) => (
+              <div key={feature.name}>
+                <dt>{feature.name}</dt>
+                <dd>{feature.note}</dd>
+              </div>
+            ))}
+          </dl>
+        </section>
+      ) : null}
+
+      {app.screenshots.length > 0 ? (
+        <section className="drop-section">
+          <h2>Screenshots</h2>
           <div className="shots">
-            {app.shots.map((shot) => (
-              <ShotFrame key={shot.title} shot={shot} />
+            {app.screenshots.map((shot) => (
+              <figure className="shot" key={shot.src}>
+                <img src={shot.src} alt={shot.alt} loading="lazy" />
+                {shot.caption ? <figcaption>{shot.caption}</figcaption> : null}
+              </figure>
             ))}
           </div>
         </section>
@@ -475,19 +510,3 @@ function RowDropdown({
   )
 }
 
-function ShotFrame({ shot }: { shot: Shot }) {
-  return (
-    <div className="shot">
-      <div className="shot-label">{shot.title}</div>
-      <div className="shot-body">
-        {shot.bars.map((width, index) => (
-          <span
-            key={`${shot.title}-${index}`}
-            className={index === 1 ? 'bar strong' : 'bar'}
-            style={{ width: `${width}%` }}
-          />
-        ))}
-      </div>
-    </div>
-  )
-}

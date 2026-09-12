@@ -11,9 +11,21 @@ export type AppVersion = {
   note: string
 }
 
-export type Shot = {
-  title: string
-  bars: number[]
+/** A feature worth calling out, with one line on why it matters. */
+export type Feature = {
+  name: string
+  note: string
+}
+
+/**
+ * A real screenshot. Put the file in `public/shots/<mini id>/` and point
+ * `src` at `/shots/<mini id>/<file>`. Leave the list empty rather than
+ * shipping a placeholder.
+ */
+export type Screenshot = {
+  src: string
+  alt: string
+  caption: string
 }
 
 export type MiniApp = {
@@ -32,7 +44,13 @@ export type MiniApp = {
   /** ISO date of the latest public commit. */
   updatedAt: string
   updatesPerWeek: number
-  shots: Shot[]
+  /** One or two sentences on why the product is useful. */
+  why: string
+  /** The kinds of people who get the most out of it. */
+  bestFor: string[]
+  /** Novel or unusual features, not a full feature list. */
+  features: Feature[]
+  screenshots: Screenshot[]
   versions: AppVersion[]
   reviewsByHash: Record<string, Review[]>
 }
