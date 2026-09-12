@@ -24,9 +24,13 @@ export type MiniApp = {
   category: string
   repo: string
   repoUrl: string
+  openUrl: string
+  /** Approximate, derived from GitHub language bytes. */
   lines: number
+  /** Repo size reported by GitHub, in KB. Includes history. */
   sizeKb: number
-  lastUpdate: string
+  /** ISO date of the latest public commit. */
+  updatedAt: string
   updatesPerWeek: number
   shots: Shot[]
   versions: AppVersion[]

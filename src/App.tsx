@@ -1,7 +1,11 @@
 import { useState } from 'react'
 import { STARTERS } from './data/minis'
 import {
+  anyReviews,
   formatCount,
+  formatDate,
+  formatSize,
+  freshnessLabel,
   lineageReviews,
   liveReviews,
   liveVersion,
@@ -17,24 +21,25 @@ import type { AppVersion, MiniApp, Review, Shot } from './types'
 
 export default function App() {
   const [apps, setApps] = useState<MiniApp[]>(STARTERS)
-  const [openId, setOpenId] = useState<string | null>('click-plumbing')
-  const [selectedHash, setSelectedHash] = useState('a3f9c1')
+  const [openId, setOpenId] = useState<string | null>(null)
+  const [selectedHash, setSelectedHash] = useState('')
   const [draft, setDraft] = useState('')
   const [rating, setRating] = useState(5)
   const [justWiped, setJustWiped] = useState(false)
 
   const ranked = rankMinis(apps)
   const openApp = apps.find((app) => app.id === openId) ?? null
+  const ranking = anyReviews(apps)
   const reviewedCount = apps.filter((app) => liveReviews(app).length > 0).length
 
   function toggleRow(id: string) {
-    const app = apps.find((item) => item.id === id)
     if (openId === id) {
       setOpenId(null)
       return
     }
+    const app = apps.find((item) => item.id === id)
     setOpenId(id)
-    setSelectedHash(app ? liveVersion(app).hash : selectedHash)
+    setSelectedHash(app ? liveVersion(app).hash : '')
     setJustWiped(false)
     setDraft('')
   }
@@ -43,12 +48,17 @@ export default function App() {
     if (!openApp) return
     const live = liveVersion(openApp)
     const hash = nextHash(live.hash + String(openApp.versions.length))
+    const today = new Date().toISOString().slice(0, 10)
     setApps((current) =>
       current.map((app) => {
         if (app.id !== openApp.id) return app
         return {
           ...app,
-          versions: [...app.versions, { hash, shipped: 'Just now', note: 'Untitled change' }],
+          updatedAt: today,
+          versions: [
+            ...app.versions,
+            { hash, shipped: today, note: 'untitled change' },
+          ],
           reviewsByHash: { ...app.reviewsByHash, [hash]: [] },
         }
       }),
@@ -84,34 +94,29 @@ export default function App() {
   return (
     <div className="page">
       <header className="hero">
-        <div>
-          <p className="eyebrow">AUTO MINI</p>
-          <h1>A leaderboard of little apps</h1>
-        </div>
-        <p className="domain">automini.org</p>
+        <p className="eyebrow">Auto Mini</p>
+        <h1>A leaderboard of little apps</h1>
+        <p className="lede">
+          Every mini here lives in a public GitHub repo. Reviews attach to one
+          exact commit — change the app and that build starts over.
+        </p>
+        <p className="meta-line">
+          <span>{apps.length} minis</span>
+          <span>{reviewedCount} reviewed</span>
+          <a href="https://automini.org">automini.org</a>
+        </p>
       </header>
-
-      <p className="lede">
-        Click a row to open it. The board ranks the live hash. The dropdown is
-        where you open the tool, check the GitHub pulse, and read reviews for
-        that exact build.
-      </p>
-
-      <div className="stats">
-        <Stat value={String(apps.length)} label="Listed minis" />
-        <Stat value={String(reviewedCount)} label="With live reviews" />
-      </div>
 
       <div className="board">
         <div className="board-head">
-          <span className="rank-col">#</span>
-          <span>Mini</span>
-          <span className="rating-col">Rating</span>
+          <span className="col-name">Mini</span>
+          <span className="col-score">{ranking ? 'Rating' : 'Last commit'}</span>
         </div>
         {ranked.map((app, index) => (
           <BoardRow
             key={app.id}
             rank={index + 1}
+            showRank={ranking}
             app={app}
             open={openId === app.id}
             viewingHash={openId === app.id ? selectedHash : liveVersion(app).hash}
@@ -129,37 +134,17 @@ export default function App() {
       </div>
 
       <p className="footnote">
-        Version one uses sample minis on this page. Reviews stay in your
-        browser until we add Supabase.
+        {ranking
+          ? 'Ranked by the live commit. Retired versions keep their stars.'
+          : 'Nothing is ranked yet — ordered by latest commit. Reviews stay in your browser until we add Supabase.'}
       </p>
     </div>
   )
 }
 
-function Stat({ value, label }: { value: string; label: string }) {
-  return (
-    <div className="stat">
-      <strong>{value}</strong>
-      <span>{label}</span>
-    </div>
-  )
-}
-
-function StackedScore({ live, lineage }: { live: string; lineage: string }) {
-  return (
-    <div className="stacked-score">
-      <span className="live-score">{live}</span>
-      <span className="lineage-score">{lineage}</span>
-    </div>
-  )
-}
-
-function AppMark({ initials }: { initials: string }) {
-  return <div className="mark">{initials}</div>
-}
-
 function BoardRow({
   rank,
+  showRank,
   app,
   open,
   viewingHash,
@@ -174,6 +159,7 @@ function BoardRow({
   onReview,
 }: {
   rank: number
+  showRank: boolean
   app: MiniApp
   open: boolean
   viewingHash: string
@@ -187,19 +173,41 @@ function BoardRow({
   onShip: () => void
   onReview: () => void
 }) {
+  const live = liveReviews(app)
+  const lineage = lineageReviews(app)
+
   return (
     <article className={open ? 'row open' : 'row'}>
-      <button type="button" className="row-toggle" onClick={onToggle}>
-        <span className={open ? 'rank on' : 'rank'}>{rank}</span>
-        <AppMark initials={app.initials} />
-        <span className="row-copy">
-          <strong>{app.name}</strong>
-          <span>{app.description}</span>
+      <button
+        type="button"
+        className={showRank ? 'row-toggle' : 'row-toggle no-rank'}
+        onClick={onToggle}
+        aria-expanded={open}
+      >
+        {showRank ? <span className="col-rank">{rank}</span> : null}
+        <span className="mark" aria-hidden="true">
+          {app.initials}
         </span>
-        <StackedScore
-          live={scoreLabel(liveReviews(app))}
-          lineage={scoreLabel(lineageReviews(app))}
-        />
+        <span className="col-name">
+          <span className="row-name">{app.name}</span>
+          <span className="row-desc">{app.description}</span>
+        </span>
+        <span className="col-score">
+          {live.length === 0 ? (
+            <span className="stacked-score">
+              <span className="quiet-value">{formatDate(app.updatedAt)}</span>
+              <span className="lineage-score">{freshnessLabel(app.updatedAt)}</span>
+            </span>
+          ) : (
+            <span className="stacked-score">
+              <span className="live-score">{scoreLabel(live)}</span>
+              <span className="lineage-score">{scoreLabel(lineage)}</span>
+            </span>
+          )}
+        </span>
+        <span className="chev" aria-hidden="true">
+          {open ? '–' : '+'}
+        </span>
       </button>
       {open ? (
         <RowDropdown
@@ -252,55 +260,85 @@ function RowDropdown({
 
   return (
     <div className="dropdown">
-      <div className="actions">
-        <a className="btn primary" href={app.repoUrl} target="_blank" rel="noreferrer">
+      <div className="drop-actions">
+        <a className="btn primary" href={app.openUrl} target="_blank" rel="noreferrer">
           Open
         </a>
         <a className="repo-link" href={app.repoUrl} target="_blank" rel="noreferrer">
           {app.repo}
         </a>
-        <span className="pill">{app.category}</span>
-        <code>{live.hash}</code>
+        <span className="tag">{app.category}</span>
       </div>
 
-      <div className="pulse">
-        <Stat value={formatCount(app.lines)} label="Lines of code" />
-        <Stat value={`${app.sizeKb} KB`} label="All files" />
-        <Stat value={app.lastUpdate} label="Last update" />
-        <Stat value={app.updatesPerWeek.toFixed(1)} label="Updates / week · last 3 weeks" />
-      </div>
+      <dl className="pulse">
+        <div>
+          <dt>Lines of code</dt>
+          <dd>{app.lines ? `~${formatCount(app.lines)}` : 'Not detected'}</dd>
+        </div>
+        <div>
+          <dt>Repo size</dt>
+          <dd>{formatSize(app.sizeKb)}</dd>
+        </div>
+        <div>
+          <dt>Last commit</dt>
+          <dd>{formatDate(app.updatedAt)}</dd>
+        </div>
+        <div>
+          <dt>Commits per week</dt>
+          <dd>{app.updatesPerWeek ? app.updatesPerWeek.toFixed(1) : '0'}</dd>
+        </div>
+      </dl>
       <p className="caption">
-        GitHub pulse · {app.repo} · last 3 weeks for the weekly average
+        From GitHub · {freshnessLabel(app.updatedAt)} · weekly average over the
+        last 3 weeks · lines estimated from language bytes
       </p>
 
-      <p className="caption">From the app</p>
-      <div className="shots">
-        {app.shots.map((shot) => (
-          <ShotFrame key={shot.title} shot={shot} />
-        ))}
-      </div>
+      {app.shots.length > 0 ? (
+        <section className="drop-section">
+          <h2>From the app</h2>
+          <div className="shots">
+            {app.shots.map((shot) => (
+              <ShotFrame key={shot.title} shot={shot} />
+            ))}
+          </div>
+        </section>
+      ) : null}
 
-      <div className="version-blurb">
-        <strong>{viewing.note}</strong>
-        <p>
-          {viewingLive ? 'Live build' : `Retired v${versionNumber(app, viewing.hash)}`} ·
-          shipped {viewing.shipped} · {scoreLabel(viewingReviews)} from {viewingReviews.length}
+      <section className="drop-section">
+        <h2>
+          {viewingLive
+            ? 'Live build'
+            : `Retired v${versionNumber(app, viewing.hash)}`}
+        </h2>
+        <p className="version-line">
+          <code>{viewing.hash}</code>
+          <span>{viewing.note}</span>
+          <span className="muted">{formatDate(viewing.shipped)}</span>
         </p>
-        <p className="lineage">
-          Lineage {scoreLabel(viewingLineage)} from {viewingLineage.length} ·{' '}
-          {starTotal(viewingLineage)} stars in total
+        <p className="score-line">
+          {viewingReviews.length === 0
+            ? 'No reviews on this build yet.'
+            : `${scoreLabel(viewingReviews)} from ${viewingReviews.length} ${
+                viewingReviews.length === 1 ? 'review' : 'reviews'
+              }`}
         </p>
-      </div>
+        {viewingLineage.length > 0 ? (
+          <p className="lineage">
+            Lineage {scoreLabel(viewingLineage)} from {viewingLineage.length} ·{' '}
+            {starTotal(viewingLineage)} stars in total
+          </p>
+        ) : null}
+      </section>
 
       {justWiped ? (
         <p className="notice">
-          Live reviews reset. {app.name} has a new fingerprint. Older versions
+          New fingerprint. {app.name} starts over on the board — older versions
           kept their stars.
         </p>
       ) : null}
 
       {app.versions.length > 1 ? (
-        <section>
+        <section className="drop-section">
           <h2>Versions</h2>
           <table>
             <thead>
@@ -317,7 +355,7 @@ function RowDropdown({
                 const isLive = version.hash === live.hash
                 const isViewing = version.hash === viewing.hash
                 return (
-                  <tr key={version.hash}>
+                  <tr key={version.hash} className={isViewing ? 'viewing' : undefined}>
                     <td>
                       <button
                         type="button"
@@ -330,10 +368,18 @@ function RowDropdown({
                       </button>
                     </td>
                     <td>
-                      {version.note} · {version.shipped}
+                      {version.note}
+                      <span className="muted"> · {formatDate(version.shipped)}</span>
                     </td>
                     <td>
-                      <StackedScore live={scoreLabel(own)} lineage={scoreLabel(through)} />
+                      {own.length === 0 ? (
+                        <span className="unrated">New</span>
+                      ) : (
+                        <span className="stacked-score">
+                          <span className="live-score">{scoreLabel(own)}</span>
+                          <span className="lineage-score">{scoreLabel(through)}</span>
+                        </span>
+                      )}
                     </td>
                   </tr>
                 )
@@ -344,16 +390,16 @@ function RowDropdown({
       ) : null}
 
       {viewingReviews.length > 0 ? (
-        <section>
-          <h2>{viewingLive ? 'Live reviews' : 'Reviews on this hash'}</h2>
+        <section className="drop-section">
+          <h2>{viewingLive ? 'Reviews' : 'Reviews on this build'}</h2>
           <ul className="reviews">
             {viewingReviews.map((review, index) => (
               <li key={`${review.author}-${index}`}>
-                <div className="review-meta">
+                <p className="review-meta">
                   <strong>{review.author}</strong>
                   <span className="muted">{review.rating} / 5</span>
-                  <span className="muted">{review.date}</span>
-                </div>
+                  <span className="muted when">{review.date}</span>
+                </p>
                 <p>{review.text}</p>
               </li>
             ))}
@@ -361,17 +407,17 @@ function RowDropdown({
         </section>
       ) : null}
 
-      <section>
+      <section className="drop-section">
         <h2>Leave a review</h2>
         {viewingLive ? (
           <p className="caption">
-            Posts to {live.hash}. A later change keeps this review in history
-            and clears it from the live board.
+            Posts to <code>{live.hash}</code>. A later commit keeps it in history
+            and clears it from the board.
           </p>
         ) : (
           <p className="notice quiet">
-            This version is closed. Switch back to the live hash to review the
-            current build.
+            This build is closed. Go back to the live commit to review what
+            people are using now.
           </p>
         )}
         <div className="rating-picks">
@@ -379,13 +425,14 @@ function RowDropdown({
             <button
               key={value}
               type="button"
-              className={rating === value ? 'pill on' : 'pill'}
+              className={rating === value ? 'tag pick on' : 'tag pick'}
               disabled={!viewingLive}
               onClick={() => onRating(value)}
             >
-              {value} / 5
+              {value}
             </button>
           ))}
+          <span className="caption">out of 5</span>
         </div>
         <input
           className="review-input"
@@ -393,26 +440,30 @@ function RowDropdown({
           disabled={!viewingLive}
           placeholder={
             viewingLive
-              ? 'What happened when you used this exact version?'
-              : 'Reviews only post to the live hash'
+              ? 'What happened when you used this exact build?'
+              : 'Reviews only post to the live commit'
           }
           onChange={(event) => onDraft(event.target.value)}
         />
-        <div className="actions">
+        <div className="drop-actions">
           <button
             type="button"
             className="btn primary"
             onClick={onReview}
             disabled={!viewingLive || !draft.trim()}
           >
-            Post to this hash
+            Post review
           </button>
           {viewingLive ? (
             <button type="button" className="btn ghost" onClick={onShip}>
               Ship a change
             </button>
           ) : (
-            <button type="button" className="btn ghost" onClick={() => onSelectHash(live.hash)}>
+            <button
+              type="button"
+              className="btn ghost"
+              onClick={() => onSelectHash(live.hash)}
+            >
               Back to live
             </button>
           )}
